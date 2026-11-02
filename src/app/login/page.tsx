@@ -26,7 +26,11 @@ export default function LoginPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ idToken }),
       });
-      if (!res.ok) throw new Error((await res.json()).error ?? "Sign-in failed");
+      if (!res.ok) {
+        // A proxy or crashed server can answer with an HTML page instead of JSON.
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error ?? `Sign-in failed (server responded ${res.status}).`);
+      }
       window.location.href = "/";
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sign-in failed";
